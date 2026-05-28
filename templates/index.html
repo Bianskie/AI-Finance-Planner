@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Finance Planner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="sidebar" id="sidebar">
+        <h2 class="logo-title">AI FINANCE</h2>
+        <ul class="nav-links">
+            <li onclick="switchTab('dashboard')" id="nav-dashboard" class="active"><i class="fas fa-chart-pie"></i> Dashboard</li>
+            <li onclick="switchTab('planning')" id="nav-planning"><i class="fas fa-edit"></i> Planning</li>
+            <li onclick="switchTab('tracking')" id="nav-tracking"><i class="fas fa-bullseye"></i> Tracking</li>
+            <li onclick="switchTab('chat')" id="nav-chat"><i class="fas fa-comments"></i> Chat</li>
+            <li onclick="switchTab('report')" id="nav-report"><i class="fas fa-file-invoice-dollar"></i> Monthly Report</li>
+        </ul>
+        <div class="sidebar-footer">
+            <button class="btn-quit" onclick="closeSidebar()">Close Menu</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="main-content">
+        
+        <div class="top-header">
+            <button class="hamburger-btn" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h2 id="page-title">Dashboard</h2>
+        </div>
+        
+        <section id="dashboard" class="page-section active">
+            <div class="summary-cards">
+                <div class="card">
+                    <h3>Total Balance</h3>
+                    <p id="total-saldo">Rp 0</p>
+                </div>
+                <div class="card">
+                    <h3>Total Income</h3>
+                    <p id="total-pemasukan">Rp 0</p>
+                </div>
+                <div class="card">
+                    <h3>Total Expense</h3>
+                    <p id="total-pengeluaran">Rp 0</p>
+                </div>
+            </div>
+
+            <div class="dashboard-chart-container" style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <h3>Cash Flow Overview</h3>
+                <div style="height: 250px;">
+                    <canvas id="balanceChart"></canvas>
+                </div>
+            </div>
+
+            <div class="recent-transactions">
+                <h3>Recent Transactions</h3>
+                <table id="transaction-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="planning" class="page-section" style="display: none;">
+            <div class="form-container">
+                <form id="transactionForm">
+                    <label>Transaction Type:</label>
+                    <select id="type" required>
+                        <option value="Expense">Expense</option>
+                        <option value="Income">Income</option>
+                    </select>
+
+                    <label>Category:</label>
+                    <input type="text" id="category" placeholder="e.g., Lunch, Salary, etc." required>
+
+                    <label>Amount (Rp):</label>
+                    <input type="number" id="amount" placeholder="e.g., 50000" required>
+
+                    <label>Date:</label>
+                    <input type="date" id="date" required>
+
+                    <button type="submit" class="btn-submit">Save Transaction</button>
+                </form>
+            </div>
+        </section>
+
+       <section id="tracking" class="page-section" style="display: none;">
+            <div class="tracking-container">
+                <h3>Savings Goal Tracker</h3>
+                
+                <form id="goalForm" style="margin-bottom: 25px; background: #fafafa; padding: 15px; border-radius: 8px;">
+                    <label style="display:inline-block; width:100%; margin-bottom:10px;">Set New Savings Goal (Rp):</label>
+                    <input type="number" id="goal-input" placeholder="e.g., 10000000" required style="width: 70%; padding: 10px; border-radius:5px; border: 1px solid #ccc; display:inline-block;">
+                    <button type="submit" class="btn-submit" style="width: 25%; margin-top: 0; padding: 10px; display:inline-block;">Update Goal</button>
+                </form>
+
+                <div class="progress-bar-bg">
+                    <div id="progress-fill" class="progress-bar-fill" style="width: 0%;">0%</div>
+                </div>
+                <p id="goal-text" style="text-align: center; font-weight: bold; margin-top: 10px;">Goal: Rp 0 | Saved: Rp 0</p>
+            </div>
+        </section>
+
+        <section id="chat" class="page-section" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>AI Assistant Chat</h2>
+                <button onclick="clearChat()" style="background:#FF0000; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">Clear Chat</button>
+            </div>
+            <div class="chat-container">
+                <div id="chat-history" class="chat-history">
+                    <div class="msg ai-msg">Hello! I am your financial assistant. How can I help you today?</div>
+                </div>
+                
+                <form id="chatForm" class="chat-input-area" enctype="multipart/form-data" style="position: relative;">
+                    
+                    <div id="file-preview" style="display: none; position: absolute; bottom: 70px; left: 20px; background: #e4e8f5; padding: 8px 15px; border-radius: 10px; font-size: 14px; border: 1px solid #4A69BD; color: #1E2A4F;">
+                        <i class="fas fa-file-alt"></i> <span id="file-name" style="font-weight: bold;">filename.jpg</span>
+                        <button type="button" onclick="removeFile()" style="background:none; border:none; color:red; cursor:pointer; margin-left:10px; font-weight:bold;">X</button>
+                    </div>
+                    
+                    <label for="file-upload" class="upload-btn"><i class="fas fa-plus"></i></label>
+                    <input type="file" id="file-upload" name="file" accept=".pdf, image/*" style="display: none;">
+                    
+                    <input type="text" id="chat-input" name="message" placeholder="Type a message..." required>
+                    <button type="submit" class="send-btn"><i class="fas fa-paper-plane"></i></button>
+                </form>
+            </div>
+        </section>
+
+        <section id="report" class="page-section" style="display: none;">
+            <h2>Monthly Report</h2>
+            <div class="report-container">
+                <button id="generate-report" class="btn-submit">Generate AI Report & Chart</button>
+                
+                <div style="width: 100%; max-width: 500px; margin: 20px auto;">
+                    <canvas id="expenseChart" style="display: none;"></canvas>
+                </div>
+
+                <div id="report-content" class="report-result">
+                    Click the button above to generate charts and AI analysis.
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

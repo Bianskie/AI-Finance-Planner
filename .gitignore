@@ -1,0 +1,13 @@
+# Mengabaikan Brankas Rahasia API Key
+.env
+
+# Mengabaikan folder upload agar gambar pribadi tidak masuk GitHub
+uploads/
+
+# Mengabaikan file cache bawaan sistem Python
+__pycache__/
+*.pyc
+
+# Mengabaikan database lokal
+database.json
+goal.json
