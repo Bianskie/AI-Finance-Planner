@@ -116,30 +116,37 @@
         </section>
 
         <section id="chat" class="page-section" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2>AI Assistant Chat</h2>
-                <button onclick="clearChat()" style="background:#FF0000; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">Clear Chat</button>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>AI Assistant Chat</h2>
+        <button onclick="clearChat()" style="background:#FF0000; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">Clear Chat</button>
+    </div>
+    
+    <div class="chat-container" style="position: relative;"> 
+        
+        <div id="drag-overlay" class="drag-overlay">
+            <i class="fas fa-cloud-upload-alt" style="font-size: 50px; margin-bottom: 10px;"></i>
+            <h3>Drop your file here</h3>
+        </div>
+
+        <div id="chat-history" class="chat-history">
+            <div class="msg ai-msg">Hello! I am your financial assistant. How can I help you today?</div>
+        </div>
+        
+        <form id="chatForm" class="chat-input-area" enctype="multipart/form-data" style="position: relative;">
+            
+            <div id="file-preview" style="display: none; position: absolute; bottom: 70px; left: 20px; background: #e4e8f5; padding: 8px 15px; border-radius: 10px; font-size: 14px; border: 1px solid #4A69BD; color: #1E2A4F;">
+                <i class="fas fa-file-alt"></i> <span id="file-name" style="font-weight: bold;">filename.jpg</span>
+                <button type="button" onclick="removeFile()" style="background:none; border:none; color:red; cursor:pointer; margin-left:10px; font-weight:bold;">X</button>
             </div>
-            <div class="chat-container">
-                <div id="chat-history" class="chat-history">
-                    <div class="msg ai-msg">Hello! I am your financial assistant. How can I help you today?</div>
-                </div>
-                
-                <form id="chatForm" class="chat-input-area" enctype="multipart/form-data" style="position: relative;">
-                    
-                    <div id="file-preview" style="display: none; position: absolute; bottom: 70px; left: 20px; background: #e4e8f5; padding: 8px 15px; border-radius: 10px; font-size: 14px; border: 1px solid #4A69BD; color: #1E2A4F;">
-                        <i class="fas fa-file-alt"></i> <span id="file-name" style="font-weight: bold;">filename.jpg</span>
-                        <button type="button" onclick="removeFile()" style="background:none; border:none; color:red; cursor:pointer; margin-left:10px; font-weight:bold;">X</button>
-                    </div>
-                    
-                    <label for="file-upload" class="upload-btn"><i class="fas fa-plus"></i></label>
-                    <input type="file" id="file-upload" name="file" accept=".pdf, image/*" style="display: none;">
-                    
-                    <input type="text" id="chat-input" name="message" placeholder="Type a message..." required>
-                    <button type="submit" class="send-btn"><i class="fas fa-paper-plane"></i></button>
-                </form>
-            </div>
-        </section>
+            
+            <label for="file-upload" class="upload-btn"><i class="fas fa-plus"></i></label>
+            <input type="file" id="file-upload" name="file" accept=".pdf, image/*" style="display: none;">
+            
+            <input type="text" id="chat-input" name="message" placeholder="Type a message..." required>
+            <button type="submit" class="send-btn"><i class="fas fa-paper-plane"></i></button>
+        </form>
+    </div>
+</section>
 
         <section id="report" class="page-section" style="display: none;">
             <h2>Monthly Report</h2>

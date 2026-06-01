@@ -11,3 +11,4 @@ __pycache__/
 # Mengabaikan database lokal
 database.json
 goal.json
+memory.json

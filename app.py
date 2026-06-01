@@ -4,6 +4,7 @@ import google.generativeai as genai
 import db_manager
 import json
 import os
+import vector_db
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -52,7 +53,7 @@ def delete_transaction(trx_id):
     return jsonify({"status": "success"})
 
 # ------
-# Rute Savings Goal
+# 3. Rute Savings Goal
 # ------
 GOAL_FILE = 'goal.json'
 
@@ -71,48 +72,100 @@ def set_goal():
     return jsonify({"status": "success"})
 
 # ------
-# 3. Rute Chatbot
+# 4. Rute Chatbot
 # ------
 @app.route('/api/chat', methods=['POST'])
-def chat_with_ai():
-    user_message = request.form.get("message", "")
-    uploaded_file = request.files.get("file")
-    
-    financial_data = db_manager.get_all_transactions()
-    
-    prompt = f"""
-    You are an AI Finance Planner. 
-    User's current database: {json.dumps(financial_data)}.
-    Respond to the user's message appropriately.
-    User message: {user_message}
-    """
-    
-    contents_to_send = [prompt]
-    file_path = None
-    
+def chat():
     try:
-        if uploaded_file and uploaded_file.filename != '':
-            filename = secure_filename(uploaded_file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            uploaded_file.save(file_path)
-            
-            ai_file = genai.upload_file(path=file_path)
-            contents_to_send.append(ai_file)
-            prompt += "\nI have attached a file/image. Please analyze it."
-            
-        response = model.generate_content(contents_to_send)
-        ai_reply = response.text
+        user_message = request.form.get('message', '')
+        file = request.files.get('file')
         
-        if file_path and os.path.exists(file_path):
-            os.remove(file_path)
+        extracted_text = ""
+        # List untuk menampung gambar dan teks langsung ke AI
+        contents_to_send = [] 
+        
+        # ------
+        # 1. Ambil data tabular dari dashboard (database.json)
+        # ------
+        try:
+            financial_data = db_manager.get_all_transactions()
+        except:
+            financial_data = "Data transaksi kosong."
+
+        # ------
+        # 2. Proses file gambar
+        # ------
+        if file and file.filename != '':
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
             
-        return jsonify({"response": ai_reply})
+            image_file = genai.upload_file(filepath)
+            contents_to_send.append(image_file) 
+            
+            # Coba ekstrak teks untuk disimpan ke memori (Vector)
+            try:
+                vision_prompt = "Ekstrak nama tempat dan total harga dari struk ini. Singkat saja."
+                vision_resp = model.generate_content([vision_prompt, image_file])
+                extracted_text = vision_resp.text.strip()
+            except:
+                pass 
+
+        # ------
+        # 3. Menyimpan ke memory.json
+        # ------
+        if extracted_text:
+            try: 
+                vector_db.save_memory(f"Informasi Struk: {extracted_text}")
+                print(f"SUKSES: Teks struk berhasil di-embed!")
+            except Exception as e: 
+                print(f"GAGAL SIMPAN STRUK KE VEKTOR: {str(e)}")
+            
+        if user_message:
+            try: 
+                vector_db.save_memory(f"User berkata: {user_message}")
+                print(f"SUKSES: Pesan user berhasil di-embed!")
+            except Exception as e: 
+                print(f"GAGAL SIMPAN CHAT KE VEKTOR: {str(e)}")
+
+        # ------
+        # 4. Retrieve, mencari ingatan
+        # ------
+        relevant_memory = vector_db.search_memory(user_message)
+        
+        # ------
+        # 5. Prompt lengkap
+        # ------
+        prompt = f"""
+        You are an AI Finance Assistant.
+        
+        [1] USER'S ACTUAL FINANCIAL DATA (Database Dashboard):
+        {json.dumps(financial_data)}
+        
+        [2] RELEVANT PAST MEMORIES (Vector Chat History):
+        {relevant_memory}
+        
+        [3] USER'S CURRENT MESSAGE:
+        {user_message}
+        
+        INSTRUCTIONS:
+        - Please answer based on ALL the context provided above.
+        - If the user asks about their income, balance, or expenses, CALCULATE IT carefully from the FINANCIAL DATA [1].
+        - If the user uploaded a receipt image just now, analyze it and give advice.
+        """
+        contents_to_send.append(prompt)
+        
+        # ------
+        # 6. Hasilkan jawaban
+        # ------
+        response = model.generate_content(contents_to_send)
+        return jsonify({"response": response.text})
         
     except Exception as e:
-        return jsonify({"response": f"Error interacting with AI: {str(e)}"})
-
+        return jsonify({"response": f"**System Error:** {str(e)}"})
+    
 # ------
-# Jalankan Server
+# 5. Jalankan Server
 # ------
 if __name__ == '__main__':
     app.run(debug=True)

@@ -24,11 +24,57 @@ function switchTab(tabId) {
 
     let navs = document.querySelectorAll('.nav-links li');
     navs.forEach(nav => { nav.classList.remove('active-tab'); });
-    document.getElementById('nav-' + tabId).classList.add('active-tab');
+    let activeNav = document.getElementById('nav-' + tabId);
+    if(activeNav) {
+        activeNav.classList.add('active-tab');
+    }
 
-    document.getElementById('page-title').innerText = tabId;
+    let titleElement = document.getElementById('page-title');
+    if(titleElement) titleElement.innerText = tabId;
+    
     closeSidebar();
+
+    // Simpan nama halaman
+    localStorage.setItem('activePage', tabId);
 }
+
+// ======
+// Nggak langsung balik ke dashboard pas refresh
+// ======
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // 1. Cek ingatan halaman terakhir (kalau kosong, default ke 'dashboard')
+    const savedPage = localStorage.getItem('activePage') || 'dashboard';
+    
+    switchTab(savedPage);
+
+    // ======
+    // Drag and Drop Overlay
+    // ======
+    const chatContainer = document.querySelector('.chat-container');
+    const dragOverlay = document.getElementById('drag-overlay');
+    const fileInput = document.getElementById('file-upload');
+    
+    if (chatContainer && dragOverlay && fileInput) {
+        chatContainer.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragOverlay.classList.add('active'); 
+        });
+        dragOverlay.addEventListener('dragover', (e) => e.preventDefault());
+        dragOverlay.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dragOverlay.classList.remove('active'); 
+        });
+        dragOverlay.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragOverlay.classList.remove('active'); 
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files; 
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+});
 
 // ======
 // FETCH DATA & RENDER DASHBOARD (TABEL, CARD, GRAFIK BATANG, GOAL)
@@ -42,7 +88,7 @@ async function fetchTransactions() {
         let totalExpense = 0;
         let tableHTML = '';
 
-        // TAMBAHAN BARU: Variabel untuk mengelompokkan data per tanggal
+        // Variabel untuk mengelompokkan data per tanggal
         let dailyData = {};
 
         data.forEach(trx => {
@@ -50,7 +96,7 @@ async function fetchTransactions() {
             if (trx.type === 'Income') { totalIncome += trx.amount; } 
             else { totalExpense += trx.amount; }
 
-            // 2. LOGIKA BARU: Pisahkan data masuk ke tanggal masing-masing
+            // 2. Pisahkan data masuk ke tanggal masing-masing
             let date = trx.date; 
             if (!dailyData[date]) {
                 dailyData[date] = { income: 0, expense: 0 };
@@ -81,9 +127,9 @@ async function fetchTransactions() {
         document.getElementById('total-saldo').innerText = 'Rp ' + savedMoney.toLocaleString('id-ID');
         document.querySelector('#transaction-table tbody').innerHTML = tableHTML;
 
-        // -------------------------------------------------------------
-        // LOGIKA BARU UNTUK GRAFIK HARIAN
-        // -------------------------------------------------------------
+        // ======
+        // Grafik Harian
+        // ======
         
         // Urutkan tanggal dari yang terlama ke terbaru
         let sortedDates = Object.keys(dailyData).sort(); 
@@ -96,7 +142,7 @@ async function fetchTransactions() {
             chartExpense.push(dailyData[date].expense);
         });
 
-        // Jika belum ada data sama sekali, tampilkan label kosong agar grafik tidak rusak
+        // Label kosong jika tidak ada data sama sekali
         if (sortedDates.length === 0) {
             sortedDates = ['No Data Yet'];
             chartIncome = [0];
@@ -208,9 +254,15 @@ document.getElementById('goalForm').addEventListener('submit', async function(e)
 // ======
 // CHAT AI & FILE PREVIEW
 // ======
+
 function clearChat() {
-    if(confirm("Clear all chat history?")) {
-        document.getElementById('chat-history').innerHTML = '<div class="msg ai-msg">Hello! I am your financial assistant. How can I help you today?</div>';
+    const chatHistoryDiv = document.getElementById('chat-history');
+    if (chatHistoryDiv) {
+        // 1. Kembalikan ke pesan sapaan default
+        chatHistoryDiv.innerHTML = '<div class="msg ai-msg">Hello! I am your financial assistant. How can I help you today?</div>';
+        
+        // 2. Hapus memori chat dari browser
+        localStorage.removeItem('chatData');
     }
 }
 
@@ -270,6 +322,11 @@ document.getElementById('chatForm').addEventListener('submit', async function(e)
     document.getElementById('file-preview').style.display = 'none';
     document.getElementById('chat-input').setAttribute('required', 'true');
     chatHistory.scrollTop = chatHistory.scrollHeight;
+
+    // ======
+    // Menyimpan chat ke dalam memory
+    // ======
+    localStorage.setItem('chatData', chatHistory.innerHTML);
 });
 
 // ======
@@ -327,5 +384,110 @@ document.getElementById('generate-report').addEventListener('click', async funct
         reportContent.innerHTML = formattedText;
     } catch (error) {
         reportContent.innerHTML = "Failed to generate report. Check API connection.";
+    }
+});
+
+// ======
+// FITUR DRAG AND DROP
+// ======
+document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
+
+    // 1. Mengingat halaman
+    const savedPage = localStorage.getItem('activePage') || 'dashboard';
+    switchTab(savedPage);
+
+    // ======
+    // Mengingat riwayat chat
+    // ======
+    const chatHistoryDiv = document.getElementById('chat-history');
+    const savedChat = localStorage.getItem('chatData');
+    
+    if (savedChat && chatHistoryDiv) {
+        chatHistoryDiv.innerHTML = savedChat;
+    }
+
+});
+    const chatContainer = document.querySelector('.chat-container');
+    const dragOverlay = document.getElementById('drag-overlay');
+    const fileInput = document.getElementById('file-upload');
+
+    if (chatContainer && dragOverlay && fileInput) {
+       
+        // 1. Menarik file di seluruh area chat
+        chatContainer.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragOverlay.classList.add('active'); // Tampilkan layar hijau
+        });
+
+        // 2. Mencegah browser membuka gambar di tab baru
+        dragOverlay.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        // 3. Saat file ditarik keluar dari area chat (Batal)
+        dragOverlay.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dragOverlay.classList.remove('active'); // Sembunyikan layar hijau
+        });
+
+        // 4. Saat file dilepaskan (Di-drop)
+        dragOverlay.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragOverlay.classList.remove('active'); // Sembunyikan layar hijau
+
+            // Ambil filenya dan masukkan ke input tersembunyi
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files; 
+                const event = new Event('change');
+                fileInput.dispatchEvent(event);
+            }
+        });
+    }
+});
+
+// ======
+// PEMICU OTOMATIS SAAT REFRESH WEB
+// ======
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // 1. LOAD HALAMAN TERAKHIR
+    const savedPage = localStorage.getItem('activePage') || 'dashboard';
+    if (typeof switchTab === "function") {
+        switchTab(savedPage);
+    }
+
+    // ======
+    // 2. LOAD RIWAYAT CHAT
+    // ======
+    const chatHistoryDiv = document.getElementById('chat-history');
+    const savedChat = localStorage.getItem('chatData');
+    
+    if (savedChat && chatHistoryDiv) {
+        // Tempelkan memori chat ke HTML
+        chatHistoryDiv.innerHTML = savedChat;
+        // Otomatis scroll ke pesan paling bawah
+        chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+    }
+   
+    // ======
+    // 3. KODINGAN DRAG & DROP
+    // ======
+    const chatContainer = document.querySelector('.chat-container');
+    const dragOverlay = document.getElementById('drag-overlay');
+    const fileInput = document.getElementById('file-upload');
+    
+    if (chatContainer && dragOverlay && fileInput) {
+        chatContainer.addEventListener('dragenter', (e) => { e.preventDefault(); dragOverlay.classList.add('active'); });
+        dragOverlay.addEventListener('dragover', (e) => e.preventDefault());
+        dragOverlay.addEventListener('dragleave', (e) => { e.preventDefault(); dragOverlay.classList.remove('active'); });
+        dragOverlay.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragOverlay.classList.remove('active'); 
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files; 
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
     }
 });
