@@ -42,3 +42,4 @@ def delete_transaction(trx_id):
     updated_transactions = [t for t in transactions if t['id'] != trx_id]
     save_transactions(updated_transactions)
     print(f"✅ Successfully deleted transaction ID: {trx_id}")
+    
