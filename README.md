@@ -8,7 +8,7 @@ This capstone project is designed to provide students with hands-on experience i
 
 **Status:** planning
 **Domain:** Finance & Banking
-**Progress:** 0%
+**Progress:** 100%
 
 ---
 *Synced from Zaby LMS Capstone Workspace*
