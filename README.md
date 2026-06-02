@@ -6,7 +6,7 @@ The application will be built using Python and will integrate with LLM APIs like
 
 This capstone project is designed to provide students with hands-on experience in applying AI to solve real-world financial problems. It will enable them to understand the capabilities of Generative AI in the finance domain and develop practical skills in building AI-powered financial tools.
 
-**Status:** planning
+**Status:** review
 **Domain:** Finance & Banking
 **Progress:** 0%
 
